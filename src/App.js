@@ -1,24 +1,66 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes/AppRoutes";
+import { AuthProvider } from "./auth/AuthContext";
+
+import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
+import Footer from "./components/layout/Footer";
+
+import useAuth from "./auth/useAuth";
+
+//const drawerWidth = 250;
+//const navbarHeight = 64;
+
+const AppContent = () => {
+  const { user } = useAuth();
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        overflowX: "hidden",
+      }}
+    >
+      {/* Navbar */}
+      <Navbar />
+
+      {/* Layout */}
+      <div style={{ flex: 1 }}>
+        
+        {/* Sidebar (overlay) */}
+        {user && <Sidebar />}
+
+        {/* Content */}
+        <div
+          style={{
+            marginTop: 64,
+            paddingLeft: user ? 250 : 0, // ✅ ONLY SHIFT HERE
+
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "calc(100vh - 64px)",
+          }}
+        >
+          <div style={{ flex: 1, padding: "20px" }}>
+            <AppRoutes />
+          </div>
+
+          <Footer />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
