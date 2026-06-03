@@ -18,6 +18,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 
 //const aadharRegex = /^[0-9]{12}$/;
@@ -194,6 +197,24 @@ const CompleteProfile = () => {
   }
 };
 
+  /* =========================================
+     ACADEMIC YEARS
+  ========================================= */
+  const currentYear = new Date().getFullYear();
+
+  const academicYears = [];
+
+    for (
+      let year = currentYear - 6;
+      year <= currentYear;
+      year++
+    ) {
+      academicYears.push(
+        `${year}-${year + 1}`
+      );
+    }
+
+
   /* ---------------- VALIDATION GUARD ---------------- */
   const validateAadhar = () => {
   if (!form.aadhar_number) return;
@@ -316,13 +337,27 @@ const CompleteProfile = () => {
                 onChange={handleChange}
                 fullWidth
               />
-              <TextField
-                name="batch_year"
-                label="Batch Year"
-                onChange={handleChange}
-                fullWidth
-              />
+             <FormControl fullWidth>
+                  <InputLabel>
+                    Academic Year
+                  </InputLabel>
 
+                  <Select
+                    name="batch_year"
+                    value={form.batch_year}
+                    label="Academic Year"
+                    onChange={handleChange}
+                  >
+                    {academicYears.map((year) => (
+                      <MenuItem
+                        key={year}
+                        value={year}
+                      >
+                        {year}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               <TextField
                 select
                 name="college_id"

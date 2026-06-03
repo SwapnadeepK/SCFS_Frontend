@@ -21,6 +21,9 @@ import {
   Chip,
   Divider,
   Grid,
+  FormControl,
+  InputLabel,
+  Select
 } from "@mui/material";
 
 import API from "../../api/axios";
@@ -61,6 +64,23 @@ const CreateFeeStructure = () => {
     amount: "",
     due_date: "",
   });
+
+  /* =========================================
+     ACADEMIC YEARS
+  ========================================= */
+  const currentYear = new Date().getFullYear();
+
+  const academicYears = [];
+
+    for (
+      let year = currentYear - 6;
+      year <= currentYear;
+      year++
+    ) {
+      academicYears.push(
+        `${year}-${year + 1}`
+      );
+    }
 
   /* =========================================
      FETCH MASTER DATA
@@ -467,19 +487,27 @@ const CreateFeeStructure = () => {
             xs={12}
             md={4}
           >
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="medium"
-              label="Academic Year"
-              name="academic_year"
-              placeholder="2025-2026"
-              value={
-                form.academic_year
-              }
-              onChange={handleChange}
-              sx={fieldStyle}
-            />
+            <FormControl fullWidth>
+                <InputLabel>
+                  Academic Year
+                </InputLabel>
+
+                <Select
+                    name="academic_year"
+                    value={form.academic_year}
+                    label="Academic Year"
+                    onChange={handleChange}
+                  >
+                  {academicYears.map((year) => (
+                    <MenuItem
+                      key={year}
+                      value={year}
+                    >
+                      {year}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
           </Grid>
 
           {/* AMOUNT */}
