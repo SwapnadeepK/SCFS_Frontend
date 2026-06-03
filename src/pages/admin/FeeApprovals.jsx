@@ -1,155 +1,181 @@
 import {
   useEffect,
   useState,
-  useCallback,
 } from "react";
 
-import API from "../../api/axios";
-
 import {
-  Paper,
-  Typography,
-  CircularProgress,
   Box,
+  Typography,
+  Paper,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
   Button,
   Chip,
 } from "@mui/material";
 
-import { useSnackbar } from "notistack";
+import API from "../../api/axios";
+
+import {
+  useSnackbar,
+} from "notistack";
 
 const FeeApprovals = () => {
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } =
+    useSnackbar();
 
-  const [loading, setLoading] = useState(true);
-  const [fees, setFees] = useState([]);
+  const [payments, setPayments] =
+    useState([]);
 
-  const fetchApprovals = useCallback(async () => {
-    try {
-      setLoading(true);
+  const fetchPayments =
+    async () => {
+      try {
+        const res =
+          await API.get(
+            "/fee-payments/pending"
+          );
 
-      const res = await API.get("/fees/approvals");
-
-      setFees(res.data.data || []);
-    } catch (err) {
-      enqueueSnackbar("Failed to load approvals", {
-        variant: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [enqueueSnackbar]);
+        setPayments(
+          res.data.data || []
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
   useEffect(() => {
-    fetchApprovals();
-  }, [fetchApprovals]);
+    fetchPayments();
+  }, []);
 
-  const approvePayment = async (fee_id) => {
-    try {
-      await API.post("/fees/approve", {
-        fee_id,
-      });
+  const approvePayment =
+    async (id) => {
+      try {
+        await API.put(
+          `/fee-payments/approve/${id}`
+        );
 
-      enqueueSnackbar("Payment approved", {
-        variant: "success",
-      });
+        enqueueSnackbar(
+          "Payment approved",
+          {
+            variant:
+              "success",
+          }
+        );
 
-      fetchApprovals();
-    } catch (err) {
-      enqueueSnackbar("Approval failed", {
-        variant: "error",
-      });
-    }
-  };
+        fetchPayments();
+      } catch (err) {
+        console.error(err);
 
-  if (loading) {
-    return (
-      <Box textAlign="center" mt={10}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+        enqueueSnackbar(
+          "Approval failed",
+          {
+            variant: "error",
+          }
+        );
+      }
+    };
 
   return (
-    <Paper sx={{ p: 4, m: 4 }}>
-      <Typography variant="h4" mb={4}>
-        Fee Verification Panel
+    <Box sx={{ p: 3 }}>
+      <Typography
+        variant="h4"
+        mb={3}
+        fontWeight={700}
+      >
+        Fee Approvals
       </Typography>
 
-      <Table>
+      <Paper>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  Student
+                </TableCell>
 
-        <TableHead>
-          <TableRow>
-            <TableCell>Student</TableCell>
-            <TableCell>USN</TableCell>
-            <TableCell>Amount</TableCell>
-            <TableCell>Transaction Ref</TableCell>
-            <TableCell>Method</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Action</TableCell>
-          </TableRow>
-        </TableHead>
+                <TableCell>
+                  Transaction ID
+                </TableCell>
 
-        <TableBody>
-          {fees.map((fee) => (
-            <TableRow key={fee.id}>
+                <TableCell>
+                  Payment Method
+                </TableCell>
 
-              <TableCell>
-                {fee.full_name}
-              </TableCell>
+                <TableCell>
+                  Amount
+                </TableCell>
 
-              <TableCell>
-                {fee.usn}
-              </TableCell>
+                <TableCell>
+                  Status
+                </TableCell>
 
-              <TableCell>
-                ₹{fee.amount}
-              </TableCell>
+                <TableCell>
+                  Action
+                </TableCell>
+              </TableRow>
+            </TableHead>
 
-              <TableCell>
-                {fee.transaction_ref}
-              </TableCell>
-
-              <TableCell>
-                {fee.payment_method}
-              </TableCell>
-
-              <TableCell>
-                <Chip
-                  label={fee.approval_status}
-                  color={
-                    fee.approval_status === "APPROVED"
-                      ? "success"
-                      : "warning"
-                  }
-                />
-              </TableCell>
-
-              <TableCell>
-                {fee.approval_status !==
-                  "APPROVED" && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() =>
-                      approvePayment(fee.id)
-                    }
+            <TableBody>
+              {payments.map(
+                (item) => (
+                  <TableRow
+                    key={item.id}
                   >
-                    Approve
-                  </Button>
-                )}
-              </TableCell>
+                    <TableCell>
+                      {
+                        item.full_name
+                      }
+                    </TableCell>
 
-            </TableRow>
-          ))}
-        </TableBody>
+                    <TableCell>
+                      {
+                        item.transaction_id
+                      }
+                    </TableCell>
 
-      </Table>
-    </Paper>
+                    <TableCell>
+                      {
+                        item.payment_method
+                      }
+                    </TableCell>
+
+                    <TableCell>
+                      ₹
+                      {item.amount}
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label="PENDING"
+                        color="warning"
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() =>
+                          approvePayment(
+                            item.id
+                          )
+                        }
+                      >
+                        Approve
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 };
 

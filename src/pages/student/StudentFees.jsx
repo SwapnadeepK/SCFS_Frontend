@@ -1,158 +1,279 @@
-import { useEffect, useState, useCallback } from "react";
-
-import API from "../../api/axios";
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
 import {
-  Paper,
-  Typography,
-  CircularProgress,
   Box,
-  Grid,
-  Card,
-  CardContent,
+  Typography,
+  Paper,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Chip,
   Button,
 } from "@mui/material";
 
-import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 
-const StudentFees = () => {
-  const { enqueueSnackbar } = useSnackbar();
+import { useSnackbar } from "notistack";
 
+import API from "../../api/axios";
+
+const StudentFees = () => {
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [fees, setFees] = useState([]);
+  const { enqueueSnackbar } =
+    useSnackbar();
 
-  const fetchFees = useCallback(async () => {
-    try {
-      setLoading(true);
+  const [loading, setLoading] =
+    useState(true);
 
-      const res = await API.get("/fees/my");
+  const [fees, setFees] = useState(
+    []
+  );
 
-      setFees(res.data.data || []);
-    } catch (err) {
-      enqueueSnackbar("Failed to load fees", {
-        variant: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [enqueueSnackbar]);
+  /* =========================================
+     FETCH FEES
+  ========================================= */
+  const fetchFees = useCallback(
+    async () => {
+      try {
+        setLoading(true);
 
+        const user = JSON.parse(
+          localStorage.getItem("user")
+        );
+
+        const res = await API.get(
+          `/student-fees/my-fees/${user.id}`
+        );
+
+        setFees(res.data.data || []);
+      } catch (err) {
+        console.error(err);
+
+        enqueueSnackbar(
+          "Failed to load fees",
+          {
+            variant: "error",
+          }
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [enqueueSnackbar]
+  );
+
+  /* =========================================
+     LOAD
+  ========================================= */
   useEffect(() => {
     fetchFees();
   }, [fetchFees]);
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-      case "success":
-        return "success";
-
-      case "pending":
-        return "warning";
-
-      case "failed":
-        return "error";
-
-      default:
-        return "default";
-    }
-  };
-
+  /* =========================================
+     LOADING
+  ========================================= */
   if (loading) {
     return (
-      <Box textAlign="center" mt={10}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent:
+            "center",
+          mt: 10,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Paper sx={{ p: 4, maxWidth: 1200, mx: "auto", mt: 5 }}>
-      <Typography variant="h4" mb={4}>
+    <Box sx={{ p: 3 }}>
+      {/* HEADER */}
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        mb={1}
+      >
         My Fees
       </Typography>
 
-      <Grid container spacing={3}>
-        {fees.map((fee) => (
-          <Grid item xs={12} md={6} key={fee.id}>
-            <Card elevation={4}>
-              <CardContent>
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        mb={4}
+      >
+        View and pay semester fees.
+      </Typography>
 
-                <Typography variant="h6">
-                  {fee.degree_name}
-                </Typography>
+      {/* TABLE */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: 3,
+          overflow: "hidden",
+        }}
+      >
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  Degree
+                </TableCell>
 
-                <Typography>
-                  Semester: {fee.semester_name}
-                </Typography>
+                <TableCell>
+                  Semester
+                </TableCell>
 
-                <Typography>
-                  Department: {fee.department_name}
-                </Typography>
+                <TableCell>
+                  Academic Year
+                </TableCell>
 
-                <Typography>
-                  Amount: ₹{fee.amount}
-                </Typography>
+                <TableCell>
+                  Amount
+                </TableCell>
 
-                <Typography>
-                  Due Date: {fee.due_date?.split("T")[0]}
-                </Typography>
+                <TableCell>
+                  Due Date
+                </TableCell>
 
-                <Box mt={2}>
-                  <Chip
-                    label={`Fee: ${fee.fee_status}`}
-                    color={getStatusColor(fee.fee_status)}
-                    sx={{ mr: 1 }}
-                  />
+                <TableCell>
+                  Status
+                </TableCell>
 
-                  <Chip
-                    label={`Approval: ${fee.approval_status}`}
-                    color={getStatusColor(fee.approval_status)}
-                  />
-                </Box>
+                <TableCell align="center">
+                  Action
+                </TableCell>
+              </TableRow>
+            </TableHead>
 
-                {fee.transaction_ref && (
-                  <Box mt={2}>
-                    <Typography variant="body2">
-                      Transaction Ref:
-                      {" "}
-                      {fee.transaction_ref}
-                    </Typography>
-
-                    <Typography variant="body2">
-                      Payment Method:
-                      {" "}
-                      {fee.payment_method}
-                    </Typography>
-                  </Box>
-                )}
-
-                <Box mt={3}>
-                  {fee.approval_status?.toLowerCase() !==
-                    "approved" && (
-                    <Button
-                      variant="contained"
-                      onClick={() =>
-                        navigate("/student/pay-fee", {
-                          state: fee,
-                        })
+            <TableBody>
+              {fees.length > 0 ? (
+                fees.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    hover
+                  >
+                    <TableCell>
+                      {
+                        item.degree_name
                       }
-                    >
-                      Pay Fee
-                    </Button>
-                  )}
-                </Box>
+                    </TableCell>
 
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Paper>
+                    <TableCell>
+                      {
+                        item.semester_name
+                      }
+                    </TableCell>
+
+                    <TableCell>
+                      {
+                        item.academic_year
+                      }
+                    </TableCell>
+
+                    <TableCell>
+                      ₹
+                      {Number(
+                        item.amount
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </TableCell>
+
+                    <TableCell>
+                      {new Date(
+                        item.due_date
+                      ).toLocaleDateString(
+                        "en-GB"
+                      )}
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label={
+                          item.payment_status ||
+                          "PENDING"
+                        }
+                        color={
+                          item.payment_status ===
+                          "PAID"
+                            ? "success"
+                            : item.payment_status ===
+                              "APPROVAL_PENDING"
+                            ? "info"
+                            : "warning"
+                        }
+                        size="small"
+                      />
+                    </TableCell>
+
+                    <TableCell align="center">
+                      {item.payment_status ===
+                      "PAID" ? (
+                        <Button
+                          variant="outlined"
+                          color="success"
+                          disabled
+                        >
+                          Paid
+                        </Button>
+                      ) : item.payment_status ===
+                        "APPROVAL_PENDING" ? (
+                        <Button
+                          variant="outlined"
+                          color="info"
+                          disabled
+                        >
+                          Waiting Approval
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={() =>
+                            navigate(
+                              "/student/pay-fee",
+                              {
+                                state: {
+                                  fee:
+                                    item,
+                                },
+                              }
+                            )
+                          }
+                        >
+                          Pay Now
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    align="center"
+                  >
+                    No fee structures
+                    available
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 };
 

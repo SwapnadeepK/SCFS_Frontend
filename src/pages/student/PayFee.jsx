@@ -1,12 +1,10 @@
-import { useState } from "react";
-
 import {
-  Paper,
-  Typography,
   Box,
+  Typography,
+  Paper,
   TextField,
-  MenuItem,
   Button,
+  Grid,
 } from "@mui/material";
 
 import {
@@ -14,61 +12,73 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import {
+  useState,
+} from "react";
+
+import {
+  useSnackbar,
+} from "notistack";
+
 import API from "../../api/axios";
-
-import { useSnackbar } from "notistack";
-
-const paymentMethods = [
-  "UPI",
-  "CARD",
-  "NETBANKING",
-  "CASH",
-];
 
 const PayFee = () => {
   const location = useLocation();
 
   const navigate = useNavigate();
 
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } =
+    useSnackbar();
 
-  const fee = location.state;
+  const fee = location.state?.fee;
 
-  const [form, setForm] = useState({
-    fee_id: fee?.id || "",
-    transaction_ref: "",
-    payment_method: "UPI",
-  });
+  const [loading, setLoading] =
+    useState(false);
 
-  if (!fee) {
-    return (
-      <Paper sx={{ p: 4, mt: 5, maxWidth: 600, mx: "auto" }}>
-        <Typography variant="h6">
-          Invalid Fee Request
-        </Typography>
+  const [formData, setFormData] =
+    useState({
+      transaction_id: "",
+      payment_method: "",
+    });
 
-        <Box mt={2}>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/student/fees")}
-          >
-            Back
-          </Button>
-        </Box>
-      </Paper>
-    );
-  }
-
+  /* =========================================
+     HANDLE CHANGE
+  ========================================= */
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
+    setFormData({
+      ...formData,
+      [e.target.name]:
+        e.target.value,
     });
   };
 
-  const submitPayment = async () => {
+  /* =========================================
+     SUBMIT
+  ========================================= */
+  const handleSubmit = async (
+    e
+  ) => {
+    e.preventDefault();
+
     try {
-      await API.post("/fees/pay", form);
+      setLoading(true);
+
+      const user = JSON.parse(
+        localStorage.getItem("user")
+      );
+
+      await API.post(
+        "/fee-payments/pay",
+        {
+          student_id: user.id,
+          fee_structure_id:
+            fee.id,
+          transaction_id:
+            formData.transaction_id,
+          payment_method:
+            formData.payment_method,
+        }
+      );
 
       enqueueSnackbar(
         "Payment submitted successfully",
@@ -79,67 +89,171 @@ const PayFee = () => {
 
       navigate("/student/fees");
     } catch (err) {
+      console.error(err);
+
       enqueueSnackbar(
-        err?.response?.data?.message ||
-          "Payment failed",
+        "Payment failed",
         {
           variant: "error",
         }
       );
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (!fee) {
+    return (
+      <Typography>
+        Invalid fee details
+      </Typography>
+    );
+  }
+
   return (
-    <Paper sx={{ p: 4, maxWidth: 600, mx: "auto", mt: 5 }}>
-      <Typography variant="h5" mb={3}>
+    <Box sx={{ p: 3 }}>
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        mb={3}
+      >
         Pay Fee
       </Typography>
 
-      <Typography mb={1}>
-        Amount: ₹{fee.amount}
-      </Typography>
-
-      <Typography mb={3}>
-        Semester: {fee.semester_name}
-      </Typography>
-
-      <Box display="flex" flexDirection="column" gap={3}>
-
-        <TextField
-          name="transaction_ref"
-          label="Transaction Reference"
-          value={form.transaction_ref}
-          onChange={handleChange}
-          fullWidth
-        />
-
-        <TextField
-          select
-          name="payment_method"
-          label="Payment Method"
-          value={form.payment_method}
-          onChange={handleChange}
-          fullWidth
+      <Paper
+        sx={{
+          p: 4,
+          borderRadius: 3,
+        }}
+      >
+        <Grid
+          container
+          spacing={3}
         >
-          {paymentMethods.map((method) => (
-            <MenuItem
-              key={method}
-              value={method}
+          {/* LEFT */}
+          <Grid
+            item
+            xs={12}
+            md={6}
+          >
+            <Typography
+              variant="h6"
+              mb={2}
             >
-              {method}
-            </MenuItem>
-          ))}
-        </TextField>
+              Fee Details
+            </Typography>
 
-        <Button
-          variant="contained"
-          onClick={submitPayment}
-        >
-          Submit Payment
-        </Button>
+            <Typography>
+              <strong>
+                Degree:
+              </strong>{" "}
+              {fee.degree_name}
+            </Typography>
 
-      </Box>
-    </Paper>
+            <Typography>
+              <strong>
+                Semester:
+              </strong>{" "}
+              {fee.semester_name}
+            </Typography>
+
+            <Typography>
+              <strong>
+                Academic Year:
+              </strong>{" "}
+              {fee.academic_year}
+            </Typography>
+
+            <Typography>
+              <strong>
+                Amount:
+              </strong>{" "}
+              ₹{fee.amount}
+            </Typography>
+
+            <Typography>
+              <strong>
+                Due Date:
+              </strong>{" "}
+              {new Date(
+                fee.due_date
+              ).toLocaleDateString(
+                "en-GB"
+              )}
+            </Typography>
+
+            {/* DUMMY QR */}
+            <Box mt={4}>
+              <Typography
+                variant="subtitle1"
+                mb={2}
+              >
+                Scan QR to Pay
+              </Typography>
+
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VTU-FEE-PAYMENT"
+                alt="QR"
+              />
+            </Box>
+          </Grid>
+
+          {/* RIGHT */}
+          <Grid
+            item
+            xs={12}
+            md={6}
+          >
+            <form
+              onSubmit={
+                handleSubmit
+              }
+            >
+              <TextField
+                fullWidth
+                label="Transaction ID"
+                name="transaction_id"
+                value={
+                  formData.transaction_id
+                }
+                onChange={
+                  handleChange
+                }
+                margin="normal"
+                required
+              />
+
+              <TextField
+                fullWidth
+                label="Payment Method"
+                name="payment_method"
+                value={
+                  formData.payment_method
+                }
+                onChange={
+                  handleChange
+                }
+                margin="normal"
+                placeholder="UPI / Card / Net Banking"
+                required
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                sx={{ mt: 3 }}
+                disabled={loading}
+              >
+                {loading
+                  ? "Processing..."
+                  : "Submit Payment"}
+              </Button>
+            </form>
+          </Grid>
+        </Grid>
+      </Paper>
+    </Box>
   );
 };
 
