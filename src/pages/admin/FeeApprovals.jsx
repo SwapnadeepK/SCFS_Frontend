@@ -35,7 +35,7 @@ const FeeApprovals = () => {
       try {
         const res =
           await API.get(
-            "/fee-payments/pending"
+            "/fee-payments/approvals"
           );
 
         setPayments(
@@ -50,22 +50,25 @@ const FeeApprovals = () => {
     fetchPayments();
   }, []);
 
-  const approvePayment =
-    async (id) => {
+      const approvePayment = async (id) => {
       try {
+
         await API.put(
-          `/fee-payments/approve/${id}`
+          `/fee-payments/approve/${id}`,
+          {
+            status_id: 13,
+          }
         );
 
         enqueueSnackbar(
           "Payment approved",
           {
-            variant:
-              "success",
+            variant: "success",
           }
         );
 
         fetchPayments();
+
       } catch (err) {
         console.error(err);
 
@@ -132,9 +135,7 @@ const FeeApprovals = () => {
                     </TableCell>
 
                     <TableCell>
-                      {
-                        item.transaction_id
-                      }
+                      {item.transaction_ref}
                     </TableCell>
 
                     <TableCell>

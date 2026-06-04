@@ -68,7 +68,7 @@ const PayFee = () => {
       );
 
       await API.post(
-        "/fee-payments/pay",
+        "/fee-payments/submit",
         {
           student_id: user.id,
           fee_structure_id:
