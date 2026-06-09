@@ -54,6 +54,13 @@ const Reports = () => {
 
   return (
     <div>
+      <Typography
+        variant="h4"
+        mb={3}
+        fontWeight={700}
+      >
+        Fee Reports
+      </Typography>
 
       {/* 🎯 FILTERS */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
