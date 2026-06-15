@@ -191,15 +191,54 @@ const CreateFeeStructure = () => {
   ]);
 
   /* =========================================
-     HANDLE CHANGE
-  ========================================= */
-  const handleChange = (e) => {
+   LOAD DEPARTMENTS
+   WHEN COLLEGE CHANGES
+    ========================================= */
+    useEffect(() => {
+
+      if (!form.college_id) {
+
+        setDepartments([]);
+
+        return;
+      }
+
+      fetchDepartments(
+        form.college_id
+      );
+
+    }, [form.college_id]);
+
+  /* =========================================
+   HANDLE CHANGE
+========================================= */
+const handleChange = (e) => {
+
+  const { name, value } =
+    e.target;
+
+  /* ==========================
+     COLLEGE CHANGED
+  ========================== */
+  if (name === "college_id") {
+
     setForm((prev) => ({
       ...prev,
-      [e.target.name]:
-        e.target.value,
+
+      college_id: value,
+
+      // reset department
+      department_id: "",
     }));
-  };
+
+    return;
+  }
+
+  setForm((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
 
   /* =========================================
      SUBMIT
@@ -306,6 +345,28 @@ const CreateFeeStructure = () => {
     );
   }
 
+  /* =========================================
+    RENDER FETCH DEPARTMENTS BASED ON SELECTED COLLEGE
+  ========================================= */
+  const fetchDepartments =
+  async (collegeId) => {
+
+    try {
+
+      const res =
+        await API.get(
+          `/departments/college/${collegeId}`
+        );
+
+      setDepartments(
+        res.data.data || []
+      );
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -357,26 +418,23 @@ const CreateFeeStructure = () => {
             md={3}
           >
             <TextField
-              select
-              fullWidth
-              variant="outlined"
-              size="medium"
-              label="College"
-              name="college_id"
-              value={form.college_id}
-              onChange={handleChange}
-              sx={fieldStyle}
-            >
-              {colleges.map((item) => (
-                <MenuItem
-                  key={item.id}
-                  value={item.id}
-                >
-                  {item.college_name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+                select
+                fullWidth
+                label="College"
+                name="college_id"
+                value={form.college_id}
+                onChange={handleChange}
+              >
+                {colleges.map((college) => (
+                  <MenuItem
+                    key={college.id}
+                    value={college.id}
+                  >
+                    {college.college_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              </Grid>
 
           {/* DEPARTMENT */}
           <Grid
@@ -386,29 +444,23 @@ const CreateFeeStructure = () => {
             md={3}
           >
             <TextField
-              select
-              fullWidth
-              variant="outlined"
-              size="medium"
-              label="Department"
-              name="department_id"
-              value={
-                form.department_id
-              }
-              onChange={handleChange}
-              sx={fieldStyle}
-            >
-              {departments.map((item) => (
-                <MenuItem
-                  key={item.id}
-                  value={item.id}
-                >
-                  {
-                    item.department_name
-                  }
-                </MenuItem>
-              ))}
-            </TextField>
+                select
+                fullWidth
+                label="Department"
+                name="department_id"
+                value={form.department_id}
+                onChange={handleChange}
+                disabled={!form.college_id}
+              >
+                {departments.map((dept) => (
+                  <MenuItem
+                    key={dept.id}
+                    value={dept.id}
+                  >
+                    {dept.department_name}
+                  </MenuItem>
+                ))}
+              </TextField>
           </Grid>
 
           {/* DEGREE */}

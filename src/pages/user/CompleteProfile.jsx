@@ -40,6 +40,8 @@ const CompleteProfile = () => {
 
   const [colleges, setColleges] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [filteredDepartments, setFilteredDepartments] =
+  useState([]);
   const [degrees, setDegrees] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
@@ -137,31 +139,69 @@ const CompleteProfile = () => {
     fetchDropdowns();
   }, [enqueueSnackbar]);
 
-  /* ---------------- HANDLE ---------------- */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  /* ---------------- LOAD DEPARTMENTS ---------------- */
+   const loadDepartments = async (collegeId) => {
+                try {
+                  const res = await API.get(
+                    `/departments/college/${collegeId}`
+                  );
 
-     // Aadhaar validation block
+                  setFilteredDepartments(
+                    res.data?.data || res.data || []
+                  );
+                } catch (err) {
+                  console.error(err);
+
+                  enqueueSnackbar(
+                    "Failed to load departments",
+                    {
+                      variant: "error",
+                    }
+                  );
+                }
+              };
+
+/* ---------------- HANDLE ---------------- */
+const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  /* AADHAAR VALIDATION */
   if (name === "aadhar_number") {
-    // allow only digits while typing
     if (value && !/^\d*$/.test(value)) return;
 
-    // optional: limit input length to 12
     if (value.length > 12) return;
   }
 
-    setForm((p) => ({ ...p, [name]: value }));
+  /* COLLEGE CHANGE */
+  if (name === "college_id") {
+    setForm((prev) => ({
+      ...prev,
+      college_id: value,
+      department_id: "",
+    }));
 
-    if (name === "dob") {
-      const computed = calculateAge(value);
-      setAge(computed);
+    loadDepartments(value);
 
-      if (computed !== null && computed < 18) {
-        setAgeWarningOpen(true);
-      }
+    return;
+  }
+
+  /* NORMAL FIELD */
+  setForm((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+  /* DOB */
+  if (name === "dob") {
+    const computed = calculateAge(value);
+
+    setAge(computed);
+
+    if (computed !== null && computed < 18) {
+      setAgeWarningOpen(true);
     }
-  };
-
+  }
+};
   const next = () => setActiveStep((p) => p + 1);
   const back = () => setActiveStep((p) => p - 1);
 
@@ -359,12 +399,13 @@ const CompleteProfile = () => {
                   </Select>
                 </FormControl>
               <TextField
-                select
-                name="college_id"
-                label="College"
-                onChange={handleChange}
-                fullWidth
-              >
+                  select
+                  name="college_id"
+                  label="College"
+                  value={form.college_id}
+                  onChange={handleChange}
+                  fullWidth
+                >
                 {colleges.map((c) => (
                   <MenuItem key={c.id} value={c.id}>
                     {c.college_name}
@@ -373,18 +414,23 @@ const CompleteProfile = () => {
               </TextField>
 
               <TextField
-                select
-                name="department_id"
-                label="Department"
-                onChange={handleChange}
-                fullWidth
-              >
-                {departments.map((d) => (
-                  <MenuItem key={d.id} value={d.id}>
-                    {d.department_name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                  select
+                  name="department_id"
+                  label="Department"
+                  value={form.department_id}
+                  onChange={handleChange}
+                  fullWidth
+                  disabled={!form.college_id}
+                >
+                  {filteredDepartments.map((d) => (
+                    <MenuItem
+                      key={d.id}
+                      value={d.id}
+                    >
+                      {d.department_name}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
               <TextField
                 select
@@ -427,6 +473,7 @@ const CompleteProfile = () => {
                 select
                 name="college_id"
                 label="College"
+                value={form.college_id}
                 onChange={handleChange}
                 fullWidth
               >
@@ -441,11 +488,16 @@ const CompleteProfile = () => {
                 select
                 name="department_id"
                 label="Department"
+                value={form.department_id}
                 onChange={handleChange}
                 fullWidth
+                disabled={!form.college_id}
               >
-                {departments.map((d) => (
-                  <MenuItem key={d.id} value={d.id}>
+                {filteredDepartments.map((d) => (
+                  <MenuItem
+                    key={d.id}
+                    value={d.id}
+                  >
                     {d.department_name}
                   </MenuItem>
                 ))}
